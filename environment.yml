@@ -1,4 +1,4 @@
-name: gce
+name: campnn
 channels:
   - defaults
   - conda-forge
@@ -6,7 +6,6 @@ channels:
   - pip
 dependencies:
   - python=3.10.0
-  - mkl < 2022
   - pandas
   - numpy
   - tqdm
@@ -24,3 +23,4 @@ dependencies:
   - pmdarima
   - networkx
   - seaborn
+  - scipy

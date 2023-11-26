@@ -1,4 +1,5 @@
 import networkx as nx
+import numpy as np
 
 class GraphSim:
     def __init__(self, graph_name: str, seed: int = 2294):
@@ -80,3 +81,30 @@ class GraphSim:
             networkx graph object.
         """
         return nx.watts_strogatz_graph(n=n, k=k, p=p, seed=self.seed)
+    
+    def simulate_locally_tree_like_graph(self, n: int, avg_degree: float):
+        """
+        Generate a locally tree-like graph structure using the networkx library.
+
+        :param n: Number of nodes in the graph.
+        :param avg_degree: Average degree (number of edges per node) in the graph.
+
+        :return G: A networkx graph object representing the locally tree-like graph.
+        """
+        # Create an empty graph
+        G = nx.Graph()
+
+        # Add nodes to the graph
+        for i in range(n):
+            G.add_node(i)
+
+        # Add edges to create a locally tree-like structure
+        for node in G.nodes():
+            # Connect each node to a number of other nodes equal to the desired average degree
+            # while avoiding self-loops and duplicate edges.
+            while G.degree(node) < avg_degree:
+                target = np.random.choice(n)
+                if target != node and not G.has_edge(node, target):
+                    G.add_edge(node, target)
+
+        return G

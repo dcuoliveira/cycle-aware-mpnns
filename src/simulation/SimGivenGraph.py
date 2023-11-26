@@ -30,7 +30,7 @@ class SimGivenGraph:
 
         return covariance_matrix
 
-    def sample_from_graph_structured_gaussian(self, graph, n, connected_cov=0.5, min_eigenvalue=0.01):
+    def sample_from_graph_structured_gaussian(self, graph, n, min_eigenvalue=0.01):
         """
         Sample n observations from a multivariate Gaussian distribution that
         respects the given graph structure and ensures the covariance matrix is positive semidefinite.
@@ -42,7 +42,7 @@ class SimGivenGraph:
         :return: A numpy array of sampled observations.
         """
         
-        covariance_matrix = self.generate_covariance_matrix(graph, connected_cov, min_eigenvalue)
+        covariance_matrix = self.generate_covariance_matrix(graph, min_eigenvalue)
         mean_vector = np.zeros(len(graph.nodes))  # Mean vector (can be adjusted as needed)
 
         # Sample from the multivariate Gaussian distribution

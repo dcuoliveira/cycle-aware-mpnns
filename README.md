@@ -1,4 +1,4 @@
-# Measuring Graph Correlation from Graph Embeddings
+# Cycle-aware MPNNs
 
 ## Installing conda env
 

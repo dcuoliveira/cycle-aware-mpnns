@@ -79,7 +79,12 @@ class GraphSim:
         
         Args:
             num_nodes: number of nodes.
-            k: each node is joined with its k nearest neighbors in a ring topology.
+            k: each node is joined  # Add nodes to the graph
+        for i in range(num_nodes):
+            G.add_node(i)
+
+        # Add edges to create a locally tree-like structure
+        for node in G.nodes():with its k nearest neighbors in a ring topology.
             p: probability of rewiring each edge.
             
         Returns:
@@ -88,30 +93,23 @@ class GraphSim:
 
         return nx.watts_strogatz_graph(n=num_nodes, k=k, p=p, seed=self.seed)
     
-    def simulate_locally_tree_like_graph(self, num_nodes: int, avg_d: float):
+    def simulate_locally_tree_like_graph(self, num_nodes: int, avg_d: float = 5):
         """
         Generate a locally tree-like graph structure using the networkx library.
+        We can use the configuration model generate locally tree-like networks,
+        the configuration model requires a degree sequence as input. Here, we generate
+        a degree sequence using a Poisson distribution
 
         :param num_nodes: Number of nodes in the graph.
         :param avg_d: Average degree (number of edges per node) in the graph.
 
         :return G: A networkx graph object representing the locally tree-like graph.
         """
-        
-        # Create an empty graph
-        G = nx.Graph()
+        #
+        deg_seq = np.random.poisson(lam = avg_d,size = num_nodes)
+        # correcting the degree sequence (the sum must be even)
+        if np.sum(deg_seq) % 2 != 0:
+            deg_seq[0] = deg_seq[0] + 1
 
-        # Add nodes to the graph
-        for i in range(num_nodes):
-            G.add_node(i)
-
-        # Add edges to create a locally tree-like structure
-        for node in G.nodes():
-            # Connect each node to a number of other nodes equal to the desired average degree
-            # while avoiding self-loops and duplicate edges.
-            while G.degree(node) < avg_d:
-                target = np.random.choice(num_nodes)
-                if target != node and not G.has_edge(node, target):
-                    G.add_edge(node, target)
-
-        return G
+        # return graph generated with the configuration model
+        return nx.Graph(nx.configuration_model(deg_sequence = deg_seq,seed = self.seed))

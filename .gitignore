@@ -1,3 +1,8 @@
+# dataset
+src/data/inputs/cora/*
+src/data/inputs/citeseer/*
+src/data/inputs/pubmed/*
+
 # vscode
 .DS_Store
 

@@ -27,6 +27,8 @@ dependencies:
   - ipywidgets
   - cvxopt
   - scipy
+  - networkx
+  - seaborn
   - pip:
     - torch-geometric
     - torch-geometric-temporal

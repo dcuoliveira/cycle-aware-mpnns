@@ -5,7 +5,7 @@ import torch
 from torch_geometric.datasets import Planetoid
 import torch_geometric.utils as pyg_utils
 
-sys.path.append(os.path.dirname(os.path.dirname(__file__)))
+# sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 
 from utils.conn_data import load_pickle, save_pickle
 from utils.SupressPrint import SuppressPrint

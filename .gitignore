@@ -1,7 +1,7 @@
 # dataset
-src/data/inputs/cora/*
-src/data/inputs/citeseer/*
-src/data/inputs/pubmed/*
+src/data/backup/cora/*
+src/data/backup/citeseer/*
+src/data/backup/pubmed/*
 
 # vscode
 .DS_Store

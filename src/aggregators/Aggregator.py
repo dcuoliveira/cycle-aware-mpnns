@@ -64,6 +64,35 @@ class Aggregator(nn.Module):
 
         return out
 
+    # out, # source tensor curr_ancestors_idx,curr_nodes_idx, ancestors, uall_ancestors_idx
+    def forward(self, features,curr_ancestors_idx, curr_nodes_idx,ancestors,uall_ancestors_idx):
+        # all_ancestors is already a dictionary
+        _choice, _len, _min = np.random.choice, len, min
+        n = _len(uall_ancestors_idx) # number of unique ancestors up to the root
+        # for each ancestor the nodes has
+        uancestors = list(np.unique(ancestors, return_index=True)[0])
+        #
+        ancestors = np.array(ancestors)
+        if self.__class__.__name__ == 'LSTMAggregator':
+            out = torch.zeros(n, 2*self.output_dim).to(self.device)
+        else:
+            out = torch.zeros(n, self.output_dim).to(self.device)
+        #
+        for id_ancestor in uancestors:
+            agg_ids = (ancestors == id_ancestor)
+            curr_nodes_idx_aux = np.array(curr_nodes_idx)
+            sel_rows = curr_nodes_idx_aux[agg_ids]
+            print(features.shape)
+            print(sel_rows)
+            sel_features = torch.index_select(features, 0, torch.tensor(sel_rows))
+            out[uall_ancestors_idx[id_ancestor],] = self._aggregate(features=sel_features)
+            #
+            
+        #print(ancestors)
+        #print(nodes)
+        return out
+
+
     def _aggregate(self, features):
         """
         Parameters

@@ -17,28 +17,41 @@ class GraphDecomposition:
         self.Graph = G
         self.r = r
         # recover all N_{i}
-        self.node_neigh = self.init_node_neighborhoods()
+        self.nodes_neigh = dict()
         # recover all N_{i/j}
-        self.edge_neigh = self.init_edge_neighborhoods()
+        self.cavity_neigh = dict() 
+        # init node and edge neighboorhoods
+        self.init_node_neighborhoods() # node neighborhood
+        self.init_edge_neighborhoods() # cavity neighborhood
 
     # Obtain the local neighborhood of N_{u} for all u
     def init_node_neighborhoods(self):
-        nodes_neigh = dict()
         for u in self.Graph.nodes:
-            nodes_neigh[u] = Neighborhood(u,find_neighborhood(u,self.Graph,self.r))
-            print(nodes_neigh[u].edges)
-        #
-        return nodes_neigh
-
+            self.nodes_neigh[u] = Neighborhood(u,find_neighborhood(u,self.Graph,self.r))
     #  Obtain the local neighborhood of N_{u\v} for all u,v
     def init_edge_neighborhoods(self):
-        edge_neigh = dict()
         for u in self.Graph.nodes:
-            edge_neigh[u] = dict()
-        #
+            self.cavity_neigh[u] = dict()
+        # cavity[v][u] = G_{v \leftarrow u}
         for u in self.Graph.nodes:
-            for v in self.node_neigh[u].get_nodes():
-                if v != u:
-                    edge_neigh[u][v] = neighborhood_difference(self.node_neigh[v],self.node_neigh[u])
+            for v in self.nodes_neigh[u].get_neighbors():
+                    self.cavity_neigh[v][u] = neighborhood_difference(self.nodes_neigh[v],self.nodes_neigh[u])
+
+    def to_edgeList(self,cavity_node_idx):
+        edge_list = list()
+
+        for u in self.Graph.nodes:
+            for v in self.nodes_neigh[u].get_neighbors():
+                edge_list.append((u,cavity_node_idx[(v,u)]))
+                for w in self.cavity_neigh[u][v].get_neighbors():
+                    edge_list.append((cavity_node_idx[(v,u)],cavity_node_idx[(w,v)]))
+        
         #
-        return edge_neigh
+        return edge_list
+    
+    # return neighbors of a node
+    def get_neighborhood(self,i,j = None):
+        if j is None:
+            return self.nodes_neigh[i]
+        else:
+            return self.cavity_neigh[i][j]

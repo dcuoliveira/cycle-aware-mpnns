@@ -7,8 +7,11 @@ import torch.optim as optim
 from torch.utils.data import DataLoader
 
 from data.CoraLoader import CoraLoader
+from data.GraphLoader import GraphLoader
 from models.GraphSAGE import GraphSAGE
 from utils.parsers import get_agg_class, get_criterion
+
+# environment campnn
 
 parser = argparse.ArgumentParser()
 
@@ -19,7 +22,7 @@ parser.add_argument("--outputs_path", type=str, help="Output path to export resu
 parser.add_argument("--model_name", type=str, help="Model name.", default="GraphSAGE")
 parser.add_argument("--mode", type=str, help="Mode to run in.", default="train")
 parser.add_argument("--task", type=str, help="Task to perform.", default="node_classification")
-parser.add_argument("--agg_class", type=str, help="Aggregator class to use.", default="MeanAggregator")
+parser.add_argument("--agg_class", type=str, help="Aggregator class to use.", default="LSTMAggregator")
 parser.add_argument("--cuda", type=bool, help="Use CUDA.", default=True)
 parser.add_argument("--hidden_dims", type=list, help="Hidden dimensions.", default=[16])
 parser.add_argument("--dropout", type=float, help="Dropout rate.", default=0.5)
@@ -31,7 +34,7 @@ parser.add_argument("--weight_decay", type=float, help="Weight decay.", default=
 parser.add_argument("--self_loop", type=bool, help="Use self loops.", default=True)
 parser.add_argument("--normalize_adj", type=bool, help="Normalize adjacency.", default=True)
 parser.add_argument("--transductive", type=bool, help="Transductive learning.", default=True)
-
+# MeanPoolAggregator needs to be implemented
 if __name__ == '__main__':
 
     args = parser.parse_args()
@@ -50,10 +53,12 @@ if __name__ == '__main__':
                          self_loop=False,
                          normalize_adj=False,
                          transductive=False)
+    
     loader = DataLoader(dataset=dataset,
                         batch_size=args.batch_size,
                         shuffle=True,
                         collate_fn=dataset.collate_wrapper)
+    
     input_dim, output_dim = dataset.get_dims()
 
     agg_class = get_agg_class(agg_class=args.agg_class)
@@ -79,14 +84,18 @@ if __name__ == '__main__':
         running_loss = 0.0
         num_correct, num_examples = 0, 0
         for (idx, batch) in enumerate(loader):
-            features, node_layers, mappings, rows, labels = batch
+            features, node_layers,ancestor_layers, ancestor_mapping, all_considered_nodes, all_nodes_idx, labels = batch
             features, labels = features.to(device), labels.to(device)
             optimizer.zero_grad()
-            out = model.forward(features=features,
-                                node_layers=node_layers,
-                                mappings=mappings,
-                                rows=rows)
+            # features, node_layers,ancestor_layers, ancestor_mappings, all_nodes_idx
+            out = model.forward(features = features,
+                                node_layers = node_layers,
+                                ancestor_layers = ancestor_layers,
+                                ancestor_mappings = ancestor_mapping,
+                                all_nodes_idx = all_nodes_idx
+                                )
             loss = criterion(out, labels)
+            break
             loss.backward()
             optimizer.step()
             with torch.no_grad():
@@ -174,4 +183,4 @@ if __name__ == '__main__':
 
     # print('Loss {}, accuracy {}'.format(total_loss, total_accuracy))
     # print('Finished testing.')
-    # print('--------------------------------')
+    # print('--------------------------------')forward

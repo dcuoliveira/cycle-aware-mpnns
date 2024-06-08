@@ -50,5 +50,6 @@ def find_neighborhood(i, G, r):
 # Obtain the local neighborhood of N_{u\v} given the local neighborhoods of N_{u} and N_{v}
 def neighborhood_difference(Graph_u,Graph_v):
     edges = list(Graph_u.edges.difference(Graph_v.edges))
-    G_uv = Neighborhood(Graph_u.node,edges)
+    nodes = set([u for u,_ in edges] + [v for _,v in edges])
+    G_uv = Neighborhood(nodes,edges)
     return G_uv

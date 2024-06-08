@@ -22,7 +22,7 @@ class GraphSAGE(nn.Module):
         Parameters
         ----------
         input_dim : int
-            Dimension of input node features.
+            Dimension of input node features.MaxPoolAggregator
         hidden_dims : list of ints
             Dimension of hidden layers. Must be non empty.
         output_dim : int
@@ -61,8 +61,8 @@ class GraphSAGE(nn.Module):
         self.dropout = nn.Dropout(dropout)
 
         self.relu = nn.ReLU()
-
-    def forward(self, features, node_layers, mappings, rows):
+    # WARNING, we also need to pass the graph decomposition here, if we want to use the adjacency of the local neighborhoods
+    def forward(self,features, node_layers,ancestor_layers, ancestor_mappings,all_nodes_idx): 
         """
         Parameters
         ----------
@@ -84,30 +84,49 @@ class GraphSAGE(nn.Module):
         out : torch.Tensor
             An (len(node_layers[-1]) x output_dim) tensor of output node features.
         """
+        # ancestor mapping saves all nodes
+        all_node_layers = [list(node_layers[self.num_layers])]
+        all_ancestor_layers = [list(ancestor_layers[self.num_layers])]
+        for k in range(self.num_layers - 1,-1,-1):
+            new_arr1 = all_node_layers[-1] + list(node_layers[k])
+            new_arr2 = all_ancestor_layers[-1] + list(ancestor_layers[k])
+            all_node_layers.append(new_arr1)
+            all_ancestor_layers.append(new_arr2)
+        all_node_layers.reverse()
+        all_ancestor_layers.reverse()
+        #
         out = features
         for k in range(self.num_layers):
-
             # define nodes in the k-th hop of the computational graph to be processed
-            nodes = node_layers[k+1]
+            curr_nodes = node_layers[k]
+            ancestors = ancestor_layers[k]
+            # create a idx
+            uall_nodes = list(np.unique(all_node_layers[k],return_index=True)[0])
+            uall_ancestors = list(np.unique(all_ancestor_layers[k],return_index=True)[0])
+            # indices of all nodes and ancestors from level k to 0
+            uall_nodes_idx = {j:i for i,j in enumerate(uall_nodes)}
+            uall_ancestors_idx = {j:i for i,j in enumerate(uall_ancestors)}
 
-            # define mappings from node ids to node indices in the k-th hop of the computational graph
-            mapping = mappings[k]
-            init_mapped_nodes = np.array([mappings[0][v] for v in nodes], dtype=np.int64)
-
-            # get adjacency matrix rows associated with the nodes in the k-th hop of the computational graph
-            cur_rows = rows[init_mapped_nodes]
-
+            curr_ancestors_idx = [uall_nodes_idx[v] for v in ancestors]
+            curr_nodes_idx = [uall_nodes_idx[v] for v in curr_nodes]
+            # define mappings from node ids to node indices in tall_nodes_idxhe k-th hop of the computational graph
+            #mapping = node_mappings[k] # -> ancestor mapping
             # aggregate - line 11 of Algorithm 2 in Hamilton, Ying, and Leskovec (2017)
+            # forward(self, features, nodes, ancestors, nodes_mapping, ancestor_mapping)
             aggregate = self.aggregators[k](out, # source tensor
-                                            nodes, # indices of elements to aggregate in source tensor
-                                            mapping, # sorted mapping of nodes to indices
-                                            cur_rows, # QUESTION: what is this?
-                                            self.num_samples # dimension in which to aggregate
+                                            curr_ancestors_idx,
+                                            curr_nodes_idx, # indices of elements to aggregate in source tensor
+                                            ancestors, # sorted mapping of nodes to indices
+                                            uall_ancestors_idx # new indices for the nodes
                                             )
-            cur_mapped_nodes = np.array([mapping[v] for v in nodes], dtype=np.int64)
-
+            print(aggregate.shape)
+            print(out.shape)
+            print(len(uall_ancestors_idx))
+            # Here we are basically removing some indices 
             # concat - line 12 of Algorithm 2 in Hamilton, Ying, and Leskovec (2017)
-            out = torch.cat((out[cur_mapped_nodes, :], aggregate), dim=1)
+            update_new_anestors = torch.tensor([uall_nodes_idx[v] for v in uall_ancestors])
+            print(update_new_anestors.shape)
+            out = torch.cat((torch.index_select(out, 0, update_new_anestors), aggregate), dim=1)#torch.cat((out[uancestors, :], aggregate), dim=1)
             out = self.fcs[k](out)
 
             # normalize - line 13 of Algorithm 2 in Hamilton, Ying, and Leskovec (2017)

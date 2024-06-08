@@ -21,7 +21,7 @@ def get_agg_class(agg_class):
 
     if agg_class == 'LSTMAggregator':
         return LSTMAggregator
-    elif agg_class == 'MaxPool':
+    elif agg_class == 'MaxPoolAggregator':
         return MaxPoolAggregator
     elif agg_class == 'MeanPoolAggregator':
         return MeanPoolAggregator

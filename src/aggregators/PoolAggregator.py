@@ -24,10 +24,9 @@ class PoolAggregator(Aggregator):
         Parameters
         ----------
         features : torch.Tensor
-            Input features.
-
-        Returns
-        -------
+            Input  features.
+        Returns   
+        ----------
         Aggregated feature.
         """
         out = self.relu(self.fc1(features))

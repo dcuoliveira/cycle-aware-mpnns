@@ -86,7 +86,7 @@ class CoraLoader(Dataset):
         #self.adj = adj.tolil()
 
     # obtain decomposition of the whole graph
-    def obtain_graph_decomposition(self,content,citations):
+    def obtain_graph_decomposition(self, content, citations):
         # node features (X) and target labels (y)
         features, labels = content[:, 1:-1].astype(np.float32), content[:, -1]
         d = {j : i for (i,j) in enumerate(sorted(set(labels)))}
@@ -117,14 +117,14 @@ class CoraLoader(Dataset):
         else:
             if self.mode != 'train':
                 idx += len(self.idx['train'])
-        node_layers, ancestors_layers, ancestor_mapping,all_considered_nodes = self._form_computation_cavity_graph(idx)
+        node_layers, ancestors_layers, ancestor_mapping, all_considered_nodes = self._form_computation_cavity_graph(idx)
         all_nodes_idx = {j:i for i,j in enumerate(all_considered_nodes)}
         features = self.features[all_considered_nodes, :]
         labels = self.labels[node_layers[-1]]
         features = torch.FloatTensor(features)
         labels = torch.LongTensor(labels)
 
-        return features, node_layers,ancestors_layers, ancestor_mapping, all_considered_nodes, all_nodes_idx, labels
+        return features, node_layers, ancestors_layers, ancestor_mapping, all_considered_nodes, all_nodes_idx, labels
 
     def collate_wrapper(self, batch):
         """
@@ -193,11 +193,15 @@ class CoraLoader(Dataset):
         node_layers : list of numpy array
             node_layers[i] is an array of the nodes in the ith layer of the
             computation graph.
-        mappings : list of dictionary
-            mappings[i] is a dictionary mapping node v (labelled 0 to |V|-1)
-            in node_layers[i] to its position in node_layers[i]. For example,
-            if node_layers[i] = [2,5], then mappings[i][2] = 0 and
-            mappings[i][5] = 1.
+        ancertors_layers : list of numpy array
+            ancestors_layers[i] is an array of the ancestors of the nodes in the ith layer of the
+            computation graph, that is, on the node_layers.
+        ancestor_mapping : list of dictionary
+            ancestor_mapping is a dictionary where ancestor_mapping[i] is a mapping of the unique ancestors
+            of the nodes in the ith layer of the computation graph to their position in the array of unique ancestors.
+        all_considered_nodes : list
+            list of all nodes considered for the computation of the forward pass.
+        
         """
         _list, _set = list, set
         #rows = self.adj.rows
@@ -219,14 +223,14 @@ class CoraLoader(Dataset):
             # recover
             ancestor_arr = [node for node in prev_ancestor] 
             arr = [node for node in prev]
-            #
+            
             new_neighbors = list()
             new_neighbors_ancestors = list()
-            for node,pai in zip(arr,ancestor_arr):
+            for node, father in zip(arr, ancestor_arr):
                 neighborhood = self.G_decomp.get_neighborhood(node)
-                if pai != node:
-                    neighborhood = self.G_decomp.get_neighborhood(node,pai)#[node][pai]
-                #
+                if father != node:
+                    neighborhood = self.G_decomp.get_neighborhood(node , father)#[node][father]
+                
                 for v in neighborhood.get_neighbors():
                     new_neighbors.append(v)
                     new_neighbors_ancestors.append(node)
@@ -242,7 +246,7 @@ class CoraLoader(Dataset):
             node_layers.append(arr)
             # add ancestor to ancestor_layers
             ancestors_layers.append(ancestor_arr)
-        #
+        
         node_layers.reverse()
         ancestors_layers.reverse()
         all_considered_nodes = [j for sub in node_layers for j in sub]
@@ -272,7 +276,7 @@ class CoraLoader(Dataset):
             mappings[i][5] = 1.
         """
         _list, _set = list, set
-        #rows = self.adj.rows
+        rows = self.adj.rows
 
         if type(idx) is int:
             node_layers = [np.array([idx], dtype=np.int64)]
